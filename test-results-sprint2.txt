@@ -1,0 +1,50 @@
+✔ crear, listar y cargar: aislamiento entre dos usuarios (53.633593ms)
+✔ repetir creación/compra no duplica saldo; reutilizar referencia diferente se rechaza (33.014859ms)
+✔ fallo parcial revierte estado, saldo y todas las tablas (16.561664ms)
+✔ trigger de versión rechaza snapshot obsoleto y revierte todo el batch (18.440691ms)
+✔ dos solicitudes simultáneas se serializan sin perder acciones; retry simultáneo no duplica (25.978769ms)
+✔ SQL impide owner incorrecto, ventas negativas y asientos descuadrados (41.399495ms)
+✔ 8 partidas máximo y eliminación en cascada de solo la seleccionada (84.100004ms)
+✔ guardar/reabrir base de datos conserva compras y detiene avance offline (38.879029ms)
+✔ snapshot, mayor, inventario, ventas y ticks persisten conciliados (89.272641ms)
+✔ API rechaza dinero, ticks y cantidades inválidas enviados por cliente (5.379882ms)
+✔ migración al cargar crea respaldo exacto y único antes de actualizar Sprint 1 (21.640682ms)
+✔ decisiones gerenciales y asientos se guardan juntos; retry no duplica (75.95211ms)
+✔ capital por dificultad y ciudad de 400 parcelas (18.087695ms)
+✔ todas las dificultades permiten abrir con mercancía (37.519857ms)
+✔ acciones no válidas no alteran el estado original (10.475973ms)
+✔ compras son activos; ventas enlazan libro e inventario (14.126241ms)
+✔ no comprar sin saldo ni vender sin stock (57.623311ms)
+✔ despido liquida lo devengado y cierra sin cajero (9.870844ms)
+✔ reabrir y contratar durante el mes con salarios corrientes (9.051039ms)
+✔ semilla y decisiones iguales reproducen todos los resultados (49.674706ms)
+✔ pausa, cuatro velocidades y ausencia de avance offline (76.864328ms)
+✔ otra pestaña no puede ejecutar el ciclo en paralelo (5.271503ms)
+✔ pagar obligaciones mantiene la contabilidad y evita doble salario (21.642747ms)
+✔ 365 días: conciliación diaria de asientos, saldos, ventas e inventario (3706.978473ms)
+✔ mercado diferenciado, salarios y favoritos; renovación por tiempo simulado (51.338894ms)
+✔ contratación, asignación y autonomía con nómina real (18.104056ms)
+✔ manual propone con cálculos, no compra; rechazo y aplazamiento no gastan (20.595574ms)
+✔ aprobar y modificar registra compra y no permite ejecutarla dos veces (13.287471ms)
+✔ autónomo repone de verdad y supervisado escala compras importantes (20.21803ms)
+✔ valida todos los presupuestos, riesgo, reserva, responsabilidades y asignación (59.042396ms)
+✔ no puede aprobar sobreinventario ni cantidades inválidas ni precios ilimitados (14.788323ms)
+✔ precios se aplican y estrategias pueden reducir el margen (46.900531ms)
+✔ capacitación paga, ocupa tiempo y mejora atributos con límites; ascenso (26.915666ms)
+✔ renuncia causal conserva obligaciones sin caja negativa (21.855178ms)
+✔ informes separan propuestas de acciones; evaluación usa observaciones (27.663039ms)
+✔ migración Sprint 1 preserva exactamente cuentas, inventario y reloj (17.319684ms)
+365 días activos: 7469 ms; 715 compras; 93933 ventas; 2486 registros.
+✔ exportar e importar como copia mantiene saldos; rechaza corrupción (76.010076ms)
+✔ 365 días con gerencia activa: conciliación diaria, compras, nómina y evaluación (7484.518484ms)
+✔ partida del index.html anterior conserva empleados, parcela, precios y capital (17.322665ms)
+✔ semillas producen personalidades diversas, y el gerente conservador compra menos (11.219174ms)
+✔ finanzas restringe compras futuras sin registrar ahorros ficticios (13.695945ms)
+ℹ tests 41
+ℹ suites 0
+ℹ pass 41
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 8961.993191
