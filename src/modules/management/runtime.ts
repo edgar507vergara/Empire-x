@@ -1,3 +1,4 @@
+import {assignedId,permissions,managerFit,staffEffects,context} from '../workforce/model';
 import type { Command, Employee, GameState } from '../simulation/types';
 import { BALANCE, PRODUCTS } from '../simulation/config';
 import { available, clamp, COURSES, dayOf, defaultConfig, isManager, monthOf, noise, observed, payroll, refreshMarket, skill, teamCapacity } from './model';
@@ -56,7 +57,7 @@ function propose(s:ManagedState,e:Employee,ops:Operations,action:Action,problem:
 }
 export function analyze(s:ManagedState,e:Employee,ops:Operations){
  requireOk(e.hired&&isManager(e)&&e.hr?.companyId==='retail-1','Asigna el gerente a la tienda antes de analizarla.');
- const c=period(s,e),o=observed(s),traits=e.hr!.traits,finance=skill(e,'finance'),organization=skill(e,'organization');
+ const c=period(s,e),o=observed(s),traits=e.hr!.traits,finance=skill(e,'finance')*managerFit(e,s,{industry:'retail'}),organization=skill(e,'organization')*managerFit(e,s,{industry:'retail'});
  if(c.responsibilities.includes('purchases')&&s.company.built){
   const shortage=PRODUCTS.map(p=>({p,o:observed(s,p.id)})).sort((a,b)=>a.o.stock/Math.max(1,a.o.dailyDemand)-b.o.stock/Math.max(1,b.o.dailyDemand));
   for(const {p,o} of shortage){
@@ -109,13 +110,13 @@ function completeTraining(s:ManagedState,ops:Operations){for(const e of s.employ
 function dailyPeople(s:ManagedState,ops:Operations){
  const supervisors=s.employees.filter(e=>e.hired&&!e.hr?.facilityId&&e.hr!.companyId==='retail-1'&&(isManager(e)||e.role==='supervisor')),lead=supervisors.length?supervisors.reduce((n,e)=>n+e.attributes.leadership,0)/supervisors.length:40;
  const yesterday=s.history.find(h=>h.day===dayOf(s)-1),workload=yesterday?yesterday.units/Math.max(1,teamCapacity(s)*14):0;
- for(const e of s.employees.filter(v=>v.hired&&!v.hr?.facilityId)){
+ for(const e of s.employees.filter(v=>v.hired&&!v.hr?.facilityId&&assignedId(v)!=='holding')){
   const hr=e.hr!;
 
   const paid=e.salary/hr.expectedSalary,arrears=(e.arrears||0)>0,stressDelta=workload>.85?2:workload<.5?-2:0;
   e.attributes.stress=clamp(e.attributes.stress+stressDelta+(arrears?3:0)-(skill(e,'stressResistance')>70?1:0));
   const causes:string[]=[];if(paid<.95)causes.push('Salario inferior a su expectativa');if(arrears)causes.push('Salarios vencidos sin pagar');if(e.attributes.stress>65)causes.push('Estrés sostenido por carga laboral');if(lead<40)causes.push('Supervisión insuficiente');
-  hr.causes=causes;const delta=(paid<.95?-2:paid>1.1?1:0)+(arrears?-5:0)+(e.attributes.stress>65?-2:0)+(lead>75?1:lead<40?-1:0)+(supervisors.some(v=>v.hr!.traits.includes('Sociable'))&&e.attributes.motivation<80?1:0)+(hr.training?1:0);
+  hr.causes=causes;const delta=staffEffects(s,context(s,'retail-main')).morale*3+(paid<.95?-2:paid>1.1?1:0)+(arrears?-5:0)+(e.attributes.stress>65?-2:0)+(lead>75?1:lead<40?-1:0)+(supervisors.some(v=>v.hr!.traits.includes('Sociable'))&&e.attributes.motivation<80?1:0)+(hr.training?1:0);
   e.attributes.motivation=clamp(e.attributes.motivation+delta);hr.unhappyDays=e.attributes.motivation<25?hr.unhappyDays+1:0;
   if(yesterday?.openMinutes){hr.xp+=Math.round(yesterday.openMinutes/60);hr.level=Math.min(10,1+Math.floor(hr.xp/750));e.attributes.experience=clamp(hr.xp/60);if(dayOf(s)%30===0)e.attributes.productivity=clamp(e.attributes.productivity+(e.attributes.productivity<90&&skill(e,'learning')>40?1:0));}
   const patience=hr.traits.includes('Leal')?7:hr.traits.includes('Ambicioso')?3:5;
@@ -139,7 +140,7 @@ function evaluate(s:ManagedState,ops:Operations){
   log(s,ops,'decision_evaluated',p.actual,p.managerId,0,{before,after:o},p.id);
  }
  if(dayOf(s)%7!==0)return;
- for(const e of s.employees.filter(v=>v.hired&&isManager(v)&&v.hr!.companyId==='retail-1'&&!v.hr!.facilityId)){
+ for(const e of s.employees.filter(v=>v.hired&&isManager(v)&&v.hr!.companyId==='retail-1'&&!v.hr!.facilityId&&assignedId(v)!=='holding')){
   const o=observed(s),c=period(s,e),efficiency=o.units/Math.max(1,o.openMinutes/60*o.capacity),budget=c.spentMonth<=c.limits.monthly?100:0,turnover=o.units/Math.max(1,s.inventory.reduce((n,i)=>n+i.quantity,0)),lostRate=o.lost/Math.max(1,o.units+o.lost),team=s.employees.filter(v=>v.hired),productivity=team.reduce((n,e)=>n+e.attributes.productivity,0)/Math.max(1,team.length);
   const score=clamp(20*Math.min(1,efficiency)+budget*.15+Math.min(20,turnover*5)+20*(1-lostRate)+o.satisfaction*.15+productivity*.1);
   s.management.evaluations.push({id:id(s,'evaluation'),managerId:e.id,day:dayOf(s),score,indicators:{profit:o.profit,efficiency:Math.round(efficiency*100),budget,turnover:Math.round(turnover*100)/100,lost:o.lost,productivity:Math.round(productivity),satisfaction:Math.round(o.satisfaction)},context:`${Math.round(o.openMinutes/60)} h de operación; capacidad ${o.capacity.toFixed(1)}/h, reputación ${o.reputation}, caja ${o.cash/100} USD. Indicadores compartidos del negocio, sin atribuir toda la utilidad al gerente.`});
@@ -153,7 +154,7 @@ export function managementHour(s:ManagedState,ops:Operations,newDay:boolean){
  for(const p of s.management.decisions){if(['pending','blocked','postponed'].includes(p.status)&&s.clock.second>=p.expires){p.status='expired';p.reason='Datos vencidos';log(s,ops,'decision_expired',p.problem,p.managerId,0,undefined,p.id);}else if(p.status==='postponed'&&p.wake<=s.clock.second)p.status='pending';}
  // Decisions every six simulated hours; bounded work independent of minute-level sales.
  if(Math.floor(s.clock.second/3600)%6!==0)return;
- for(const e of s.employees.filter(v=>v.hired&&isManager(v)&&v.hr!.companyId==='retail-1'&&!v.hr!.facilityId)){
+ for(const e of s.employees.filter(v=>v.hired&&isManager(v)&&v.hr!.companyId==='retail-1'&&!v.hr!.facilityId&&assignedId(v)!=='holding')){
   for(const p of s.management.decisions.filter(v=>v.managerId===e.id&&v.status==='pending'&&v.wake<=s.clock.second))if(e.hr!.manager!.autonomy!=='manual'){try{execute(s,e,p,ops,false);}catch(error){p.reason=(error as Error).message;}}
   analyze(s,e,ops);
  }

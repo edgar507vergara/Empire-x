@@ -20,7 +20,7 @@ export async function persist(db:Database,userId:string,version:number,requestId
     q('insert into profiles(id,display_name,created_at) values(?,?,?) on conflict(id) do nothing',userId,s.playerName,now);
     q('insert into game_saves(id,owner_id,player_name,company_name,difficulty,version,sim_second,state,created_at,updated_at) values(?,?,?,?,?,?,?,?,?,?)',id,userId,s.playerName,s.company.name,s.difficulty,v,s.clock.second,JSON.stringify(s),now,now);
   }else{
-    q("insert into save_backups(game_id,owner_id,id,state,created_at) select id,owner_id,'sprint-'||json_extract(state,'$.schemaVersion'),state,? from game_saves where id=? and owner_id=? and json_extract(state,'$.schemaVersion')<3 on conflict(game_id,id) do nothing",now,id,userId);
+    q("insert into save_backups(game_id,owner_id,id,state,created_at) select id,owner_id,'sprint-'||json_extract(state,'$.schemaVersion'),state,? from game_saves where id=? and owner_id=? and json_extract(state,'$.schemaVersion')<4 on conflict(game_id,id) do nothing",now,id,userId);
     // Do NOT add a version WHERE clause: a stale version must raise and abort the complete batch.
     q('update game_saves set state=?,version=?,sim_second=?,company_name=?,updated_at=? where id=? and owner_id=?',JSON.stringify(s),v,s.clock.second,s.company.name,now,id,userId);
   }

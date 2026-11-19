@@ -5,7 +5,7 @@ import type { Command,Difficulty } from '@/modules/simulation/types';
 import { load,persist,receipt,serverTime,type Database } from './repository';
 async function requestHash(value:unknown){const bytes=new TextEncoder().encode(JSON.stringify(value));const digest=await crypto.subtle.digest('SHA-256',bytes);return Array.from(new Uint8Array(digest),x=>x.toString(16).padStart(2,'0')).join('');}
 export async function readGame(db:Database,userId:string,id:string){const value=await load(db,userId,id);if(!value)throw new ApiError('Partida no encontrada.',404);
- if(value.state.schemaVersion<3){const state=migrateState(value.state);assertIntegrity(state);try{await persist(db,userId,value.version,'migration-v3','migration-v3',{state,delta:emptyDelta()});}catch(error){if(!String(error).includes('version_conflict')&&!String(error).includes('UNIQUE constraint'))throw error;}return (await load(db,userId,id))!;}return value;}
+ if(value.state.schemaVersion<4){const state=migrateState(value.state);assertIntegrity(state);try{await persist(db,userId,value.version,'migration-v4','migration-v4',{state,delta:emptyDelta()});}catch(error){if(!String(error).includes('version_conflict')&&!String(error).includes('UNIQUE constraint'))throw error;}return (await load(db,userId,id))!;}return value;}
 export async function newGame(db:Database,userId:string,input:{requestId:string;playerName:string;companyName:string;difficulty:Difficulty}){
   const hash=await requestHash(input),prior=await receipt(db,userId,input.requestId,input.requestId);
   if(prior){if(prior.request_hash!==hash)throw new ApiError('Referencia de partida en conflicto.',409);return readGame(db,userId,input.requestId);}

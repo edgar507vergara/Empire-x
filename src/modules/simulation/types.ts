@@ -1,3 +1,4 @@
+import type {WorkforceCommand} from '../workforce/types';
 import type {EnterpriseState,EnterpriseCommand,BusinessRecord,WorkerRole} from '../enterprise/types';
 import type { HRProfile, ManagementState, ManagementCommand, ManagementLog, ManagerRole } from '../management/types';
 export type Difficulty = 'easy' | 'normal' | 'hard';
@@ -18,7 +19,7 @@ export interface DayReport { day: number; revenue: number; cogs: number; expense
 export interface Company { name: string; tileId: number | null; built: boolean; equipped: boolean; equipmentQuality: number; open: boolean; reputation: number; openedOnce: boolean; openingFeePaid: boolean; operatingDays: number; reportsViewed: number; marketing: boolean }
 export interface Clock { second: number; tick: number; speed: Speed; lastRealMs: number; leaseUntilMs: number; controller: string | null; remainderMs: number }
 export interface GameState {
-  schemaVersion: 1 | 2 | 3; enterprise?:EnterpriseState; management?:ManagementState; id: string; playerName: string; difficulty: Difficulty; seed: number; rng: number;
+  schemaVersion: 1 | 2 | 3 | 4; workforce?:{marketWeek:number}; enterprise?:EnterpriseState; management?:ManagementState; id: string; playerName: string; difficulty: Difficulty; seed: number; rng: number;
   clock: Clock; company: Company; accounts: Record<Account, number>; tiles: Tile[]; inventory: Stock[];
   employees: Employee[]; events: GameEvent[]; missions: boolean[]; history: DayReport[];
   totals: { units: number; clients: number; lost: number; openMinutes: number };
@@ -27,7 +28,7 @@ export interface GameState {
 }
 export interface Delta { enterpriseEntries?:BusinessRecord[]; managementLogs?:ManagementLog[]; entries: Entry[]; sales: Sale[]; movements: Movement[]; ticks: { tick: number; second: number }[] }
 export interface Transition { state: GameState; delta: Delta }
-export type Command = ManagementCommand | EnterpriseCommand
+export type Command = WorkforceCommand | ManagementCommand | EnterpriseCommand
   | { type: 'buy_land'; tileId: number }
   | { type: 'build' } | { type: 'equip'; used?: boolean }
   | { type: 'buy_stock'; productId: string; quantity: number }

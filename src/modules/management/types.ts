@@ -1,3 +1,4 @@
+import type {Career} from '../workforce/types';
 import type {IndustryAction} from '../enterprise/types';
 import type { Command, Employee, GameState } from '../simulation/types';
 export const MANAGER_ROLES = ['general_manager','operations_manager','commercial_manager','finance_manager','hr_manager','inventory_manager','restaurant_manager','logistics_manager','industrial_manager','hotel_manager','fuel_manager'] as const;
@@ -7,7 +8,7 @@ export type Strategy = 'profit'|'sales'|'competitive'|'liquidity'|'slow_stock'|'
 export type Trait = 'Ambicioso'|'Conservador'|'Innovador'|'Analítico'|'Disciplinado'|'Sociable'|'Competitivo'|'Leal'|'Arriesgado';
 export interface Permissions { perPurchase:number; daily:number; monthly:number; hiringLimit:number; priceRange:number; risk:number; reserve:number }
 export interface ManagerConfig { autonomy:'manual'|'supervised'|'autonomous'; responsibilities:Responsibility[]; limits:Permissions; strategy:Strategy; spentDay:number; spentMonth:number; day:number; month:string; hires:number; learning:number }
-export interface HRProfile { companyId:string|null; facilityId?:string; hiredAt:number|null; level:number; xp:number; traits:Trait[]; expectedSalary:number; favorite:boolean; rejected:boolean; expires:number; unhappyDays:number; causes:string[]; lastEventDay:number; training:Training|null; manager:ManagerConfig|null }
+export interface HRProfile { career?:Career; companyId:string|null; facilityId?:string; hiredAt:number|null; level:number; xp:number; traits:Trait[]; expectedSalary:number; favorite:boolean; rejected:boolean; expires:number; unhappyDays:number; causes:string[]; lastEventDay:number; training:Training|null; manager:ManagerConfig|null }
 export interface Training { courseId:string; started:number; ends:number; before:number; expected:number }
 export type Skill = 'productivity'|'leadership'|'finance'|'negotiation'|'commerce'|'creativity'|'organization'|'honesty'|'loyalty'|'motivation'|'stressResistance'|'learning';
 export type Action = {type:'industry';operation:IndustryAction}|{type:'hr_control_costs';employeeId:string;reserve:number}|{type:'buy_stock';productId:string;quantity:number}|{type:'set_price';productId:string;price:number}|{type:'hire';employeeId:string}|{type:'hr_train';employeeId:string;courseId:string};

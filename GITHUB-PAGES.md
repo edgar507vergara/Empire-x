@@ -1,4 +1,4 @@
-# Publicar EMPIRE X Sprint 3 en tu GitHub Pages existente
+# Publicar EMPIRE X Sprint 4 en tu GitHub Pages existente
 
 La carpeta `github-pages/` del ZIP de entrega contiene el juego listo: `index.html`, `assets/` y `.nojekyll`. Es la compilación del mismo motor y la misma interfaz del proyecto. No requiere Supabase, Vercel, servidor, claves API ni pagos.
 

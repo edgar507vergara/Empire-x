@@ -29,7 +29,7 @@ export async function localRequest(path:string,body?:unknown,method?:string):Pro
  if(path==='/api/games'&&body){const input=newGameSchema.parse(body),prior=all.find(v=>v.state.id===input.requestId);if(prior){output={state:prior.state};return;}if(all.length>=8)throw new Error('Puedes mantener hasta 8 partidas.');const result=createGame(input.requestId,input.playerName,input.companyName,input.difficulty,crypto.getRandomValues(new Uint32Array(1))[0],Date.now());row={state:result.state,updated:Date.now(),backups:[]};add(tx,row.state.id,result.delta);store.add(row);output={state:row.state};return;}
  if(!row)throw new Error('Partida no encontrada.');
  if(method==='DELETE'){store.delete(gameId);for(const name of ['ledger','journal','receipts']){const cursor=tx.objectStore(name).index('game_id').openCursor(IDBKeyRange.only(gameId));cursor.onsuccess=()=>{if(cursor.result){cursor.result.delete();cursor.result.continue();}};}output={ok:true};return;}
- if(row.state.schemaVersion<3){validateState(row.state);row.backups.push(structuredClone(row.state));row.state=migrateState(row.state);store.put(row);}
+ if(row.state.schemaVersion<4){validateState(row.state);row.backups.push(structuredClone(row.state));row.state=migrateState(row.state);store.put(row);}
  if(parts[4]==='commands'){
   const input=actionSchema.parse(body),hash=JSON.stringify(input),receipts=tx.objectStore('receipts'),r=receipts.get(`${gameId}|${input.requestId}`);const current=row;
   r.onsuccess=()=>{try{if(r.result){if(r.result.hash!==hash)throw new Error('Referencia de operación en conflicto.');output={state:current.state};return;}

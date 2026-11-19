@@ -1,3 +1,5 @@
+import {workforceCommand,workforceHour,validateWorkforce} from '../workforce/runtime';
+import {assignedId,staffEffects,context,effectiveWorker} from '../workforce/model';
 import {enterprisePersonnel,enterpriseManagementHour} from '../enterprise/management';
 import {postAccounts} from './ledger';
 import {enterpriseCommand,settle} from '../enterprise/operations';
@@ -78,9 +80,9 @@ export function assertIntegrity(s: GameState) {
   requireCondition(s.accounts.cash >= 0 && s.accounts.inventory >= 0 && s.accounts.fixedAssets >= 0 && s.accounts.payable <= 0, 'Saldo inválido.');
   requireCondition(s.inventory.reduce((v,i) => v+i.value,0)+(s.enterprise?.shipments.filter(o=>o.toId==='retail-main'&&o.status!=='delivered').reduce((n,o)=>n+o.value,0)||0) === s.accounts.inventory, 'El inventario no coincide con el libro mayor.');
   for (const i of s.inventory) { int(i.quantity); int(i.value); int(i.price,1); requireCondition(i.quantity !== 0 || i.value === 0, 'Valor sin existencias.'); }
-  requireCondition(s.employees.filter(e=>e.hired&&!e.hr?.facilityId).length <= BALANCE.maxEmployees, 'Capacidad de empleados excedida.');
+  requireCondition(s.employees.filter(e=>e.hired&&assignedId(e)==='retail-main').length <= BALANCE.maxEmployees, 'Capacidad de empleados excedida.');
   for (const e of s.employees) { int(e.accrued); int(e.salary,1); for(const a of Object.values(e.attributes)) int(a,0,100); }
-  requireCondition(s.employees.filter(e=>!e.hr?.facilityId).reduce((v,e)=>v+e.accrued,0) <= -s.accounts.payable, 'Salarios sin pasivo.');validateEnterprise(s);
+  requireCondition(s.employees.filter(e=>!e.hr?.facilityId).reduce((v,e)=>v+e.accrued,0) <= -s.accounts.payable, 'Salarios sin pasivo.');validateEnterprise(s);validateWorkforce(s);
 }
 function activeEvent(s: GameState, type: string) { return s.events.some(e=>e.type===type && day(s)<e.expires && (type==='promotion' ? e.choice==='accept' : !e.resolved)); }
 export function purchaseCost(s: GameState, productId: string) { const p = PRODUCTS.find(p=>p.id===productId); requireCondition(p,'Producto desconocido.'); return Math.round(p.cost * (activeEvent(s,'discount') ? 0.85 : 1)); }
@@ -89,7 +91,7 @@ function operations(s:GameState,d:Delta):Operations { return {
  quit:e=>{const paid=Math.min(s.accounts.cash,e.accrued);transfer(s,d,'payable','cash',paid,'Liquidación por renuncia',e.id);e.accrued-=paid;e.arrears=e.accrued;e.hired=false;e.dismissed=true;e.hr!.companyId=null;if(!s.employees.some(v=>v.hired&&v.role==='cashier')){s.company.open=false;s.notice='Tu cajero renunció; contrata un reemplazo para reabrir.';}}
  }; }
 function apply(s: GameState, d: Delta, c: Command) {
-  if(enterprisePersonnel(s,d,c)||enterpriseCommand(s,d,c))return;
+  if(workforceCommand(s,d,c)||enterprisePersonnel(s,d,c)||enterpriseCommand(s,d,c))return;
   if(managementCommand(s as ManagedState,c,operations(s,d)))return;
   const company = s.company;
   switch(c.type) {
@@ -159,7 +161,7 @@ function hourlyExpenses(s:GameState,d:Delta,second:number) {
     transfer(s,d,'expenses','payable',wage,'Salario devengado',e.id,'noncash');report(s).expenses+=wage;
   }
   const daily=s.company.open?BALANCE.dailyOperating:BALANCE.dailyClosed;
-  s.operatingCarry+=daily*(activeEvent(s,'cost')?125:100);const amount=Math.floor(s.operatingCarry/2400);s.operatingCarry%=2400;
+  s.operatingCarry+=Math.round(daily*(activeEvent(s,'cost')?125:100)*(1-staffEffects(s,context(s,'retail-main')).finance*.12));const amount=Math.floor(s.operatingCarry/2400);s.operatingCarry%=2400;
   expense(s,d,amount,'Servicios y operación',`hour-${Math.floor(second/3600)}`);
   if(s.company.marketing&&s.company.open){s.marketingCarry+=BALANCE.dailyMarketing;const v=Math.floor(s.marketingCarry/24);s.marketingCarry%=24;expense(s,d,v,'Publicidad diaria',`marketing-${Math.floor(second/3600)}`);}
 }
@@ -175,19 +177,19 @@ function simulateMinute(s:GameState,d:Delta) {
   const previous=s.clock.second, next=previous+60;
   const r=report(s);
   if(s.company.open){
-    const team=s.employees.filter(e=>e.hired&&!e.hr?.facilityId),cashiers=team.filter(e=>e.role==='cashier');
+    const team=s.employees.filter(e=>e.hired&&assignedId(e)==='retail-main'),effects=staffEffects(s,context(s,'retail-main')),cashiers=team.filter(e=>e.role==='cashier');
     if(!cashiers.length){s.company.open=false;return;}
-    const effective=(e:Employee)=>e.attributes.productivity/100*(0.6+e.attributes.motivation/250)*(1-e.attributes.stress/250)*(e.hr?.training?0.85:1);
+    const effective=(e:Employee)=>effectiveWorker(e,'retail',s.clock.second);
     const supervisor=team.find(e=>e.role==='supervisor'||(e.hr?.companyId==='retail-1'&&['general_manager','operations_manager'].includes(e.role)));
     const productivity=1+(supervisor?supervisor.attributes.leadership/500:0);
-    const hourlyCapacity=cashiers.reduce((v,e)=>v+45*effective(e),0)*productivity*s.company.equipmentQuality;
+    const hourlyCapacity=cashiers.reduce((v,e)=>v+45*effective(e),0)*productivity*s.company.equipmentQuality*(1+effects.service);
     s.capacityCarry+=Math.round(hourlyCapacity*1000);let capacity=Math.floor(s.capacityCarry/60000);s.capacityCarry%=60000;
     const variety=s.inventory.filter(i=>i.quantity>0).length/PRODUCTS.length;
-    const availability=0.72+Math.min(0.28,team.filter(e=>e.role==='stocker').reduce((v,e)=>v+effective(e)*0.35,0));
+    const availability=0.72+Math.min(0.28,effects.stock+team.filter(e=>e.role==='stocker').reduce((v,e)=>v+effective(e)*0.35,0));
     const location=s.tiles[s.company.tileId!].traffic/100;
     const reputation=0.5+s.company.reputation/100;
     const market=(0.92+random(s)*0.16)*(activeEvent(s,'demand')?1.3:1)*(activeEvent(s,'promotion')?1.25:1)*(s.company.marketing?1.15:1);
-    const seller=1+team.filter(e=>e.role==='salesperson').reduce((v,e)=>v+effective(e)*0.15,0);
+    const seller=1+effects.sales+effects.quality/2+team.filter(e=>e.role==='salesperson').reduce((v,e)=>v+effective(e)*0.15,0);
     const hour=Math.floor(previous/3600)%24;const traffic=hour>=8&&hour<22?1:0.18;
     // Rotate product traversal so capacity does not systematically favor one SKU.
     const offset=s.clock.tick%PRODUCTS.length;
@@ -220,7 +222,7 @@ function simulateMinute(s:GameState,d:Delta) {
     generateEvent(s);report(s);
   }
   if(Math.floor(previous/3600)!==Math.floor(next/3600))enterpriseHour(s,d);
-  if(Math.floor(previous/3600)!==Math.floor(next/3600)){managementHour(s as ManagedState,operations(s,d),Math.floor(previous/86400)!==Math.floor(next/86400));enterpriseManagementHour(s,d);}
+  if(Math.floor(previous/3600)!==Math.floor(next/3600)){workforceHour(s,d);managementHour(s as ManagedState,operations(s,d),Math.floor(previous/86400)!==Math.floor(next/86400));enterpriseManagementHour(s,d);}
 }
 /** Pure deterministic runner, only called by trusted server time or tests. Never accepts client ticks. */
 export function advanceTicks(state:GameState,count:number):Transition {

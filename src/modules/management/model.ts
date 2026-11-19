@@ -1,3 +1,4 @@
+import {initializeWorkforce,refreshWorkforce} from '../workforce/model';
 import {initializeEnterprise} from '../enterprise/model';
 import {WORKER_ROLES} from '../enterprise/registry';
 import { BALANCE, PRODUCTS, gameDate } from '../simulation/config';
@@ -37,11 +38,11 @@ export function refreshMarket(s:ManagedState){
 }
 /** Additive, deterministic migration: retains all Sprint 1 money, inventory, employment and clock fields. */
 export function migrateState(input:GameState):ManagedState {
- if(input.schemaVersion!==1&&input.schemaVersion!==2&&input.schemaVersion!==3)throw new Error('Versión de partida no compatible.');
+ if(input.schemaVersion!==1&&input.schemaVersion!==2&&input.schemaVersion!==3&&input.schemaVersion!==4)throw new Error('Versión de partida no compatible.');
  const s=structuredClone(input) as ManagedState;
  s.management??={marketWeek:-1,dailySales:[],decisions:[],logs:[],notifications:[],incidents:[],reports:[],evaluations:[],cooldowns:{}};
  for(const e of s.employees)enrich(e,s);
- s.accounts.receivable??=0;s.schemaVersion=3;refreshMarket(s);initializeEnterprise(s);for(const e of [...s.enterprise!.companies,...s.enterprise!.facilities])e.accounts.receivable??=0;return s;
+ s.accounts.receivable??=0;refreshMarket(s);initializeEnterprise(s);initializeWorkforce(s);refreshWorkforce(s);s.schemaVersion=4;for(const e of [...s.enterprise!.companies,...s.enterprise!.facilities])e.accounts.receivable??=0;return s;
 }
 export const available=(e:Employee,s:GameState)=>!e.hired&&!e.dismissed&&!e.hr?.rejected&&(e.id.startsWith('candidate-')||Number(e.hr?.expires)>dayOf(s));
 export function teamCapacity(s:GameState){return s.employees.filter(e=>e.hired&&!e.hr?.facilityId&&e.role==='cashier').reduce((n,e)=>n+45*e.attributes.productivity/100*(.6+e.attributes.motivation/250)*(1-e.attributes.stress/250)*(e.hr?.training?.ends&&e.hr.training.ends>s.clock.second ? .85 : 1),0)*s.company.equipmentQuality;}

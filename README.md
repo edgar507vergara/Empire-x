@@ -1,9 +1,12 @@
 # EMPIRE X — Business Empire Simulator
 
-Sprint 3 integrado sobre los Sprints 1 y 2: empresas, sucursales, cinco industrias, proveedores, producción, flota, contratos y gerentes especializados. Conserva la identidad Corporate Empire Dark y la ciudad isométrica con controles táctiles.
+Sprint 4 amplía los Sprints 1, 2 y 3 con cargos y departamentos sectoriales, contratación contextual, reconversión, carreras profesionales y directivos del holding. Conserva empresas, sucursales, cinco industrias, proveedores, producción, flota y contratos. Conserva la identidad Corporate Empire Dark y la ciudad isométrica con controles táctiles.
 
 **GitHub Pages funciona sin servidor, Supabase, Vercel, servicios de IA ni claves API.** Las partidas de Pages se guardan en IndexedDB de ese navegador y dispositivo; no se sincronizan en nube.
 
+- [Guía del Sprint 4 y recursos humanos](SPRINT-4.md)
+- [Pruebas del Sprint 4](TESTS-SPRINT-4.md)
+- [Arquitectura del Sprint 4](SPRINT-4-ARCHITECTURE.md)
 - [Guía del Sprint 3 y reglas económicas](SPRINT-3.md)
 - [Publicación en GitHub Pages](GITHUB-PAGES.md)
 - [Pruebas ejecutadas y límites de verificación](TESTS-SPRINT-3.md)
@@ -40,7 +43,8 @@ Para desarrollo local estático: `npx vite --config vite.pages.config.ts`, ruta 
 - `simulation`: reloj único, tienda original y libro contable común en centavos.
 - `enterprise`: registro central, entidades, operaciones, adaptadores de demanda, producción, logística y gerencia.
 - `management`: mercado laboral, perfiles, autonomía, límites, capacitación, propuestas, informes y evaluación.
-- `persistence`: IndexedDB, validación, checksum y migraciones aditivas 1/2 → 3 con copia previa.
+- `workforce`: profesiones, departamentos, compatibilidad, contratación, transferencias, salarios y efectos operativos.
+- `persistence`: IndexedDB, validación, checksum y migraciones aditivas 1/2/3 → 4 con copia previa.
 - `world` y `City`: ciudad 20×20, selección, arrastre y zoom. Edificios por industria en parcelas exclusivas.
 - `Administration`, `People`, `EmpireGame`: interfaz contextual y móvil sobre la navegación existente.
 - `server`, `db`, `drizzle`: modalidad alojada opcional ya existente, con identidad y SQLite/D1. No interviene en GitHub Pages.

@@ -1,3 +1,4 @@
+import {assignedId} from '../workforce/model';
 import type {Delta,Employee,GameState,Entry} from '../simulation/types';
 import {postAccounts,zeroAccounts} from '../simulation/ledger';
 import type {Accounts,BusinessDay,Facility,EnterpriseState,Industry} from './types';
@@ -15,8 +16,8 @@ export function primary(s:GameState):Facility{return {id:'retail-main',companyId
 export function facility(s:GameState,id:string){const f=id==='retail-main'?primary(s):s.enterprise?.facilities.find(f=>f.id===id);ensure(f,'Sucursal no encontrada.');return f!;}
 export function facilities(s:GameState){return [...(s.company.built?[primary(s)]:[]),...(s.enterprise?.facilities||[])];}
 export function entity(s:GameState,id:string):{id:string;companyId:string;accounts:Accounts}{if(id==='retail-main'||s.enterprise!.facilities.some(f=>f.id===id))return facility(s,id);const c=s.enterprise!.companies.find(c=>c.id===id);ensure(c,'Cuenta operativa no encontrada.');return {id:c!.id,companyId:c!.id,accounts:c!.accounts};}
-export function team(s:GameState,f:Facility){return s.employees.filter(e=>e.hired&&(f.id==='retail-main'?!e.hr?.facilityId:e.hr?.facilityId===f.id));}
-export const payroll=(s:GameState,f:Facility)=>team(s,f).reduce((n,e)=>n+e.salary,0);
+export function team(s:GameState,f:Facility){return s.employees.filter(e=>e.hired&&assignedId(e)===f.id);}
+export const payroll=(s:GameState,f:Facility)=>(f.id==='retail-main'?s.employees.filter(e=>e.hired&&!e.hr?.facilityId):team(s,f)).reduce((n,e)=>n+e.salary,0);
 export const effective=(e:Employee)=>e.attributes.productivity/100*(.6+e.attributes.motivation/250)*(1-e.attributes.stress/250)*(e.hr?.training?.ends? .85:1);
 export const cashReserve=(s:GameState,f:Facility)=>Math.max(-f.accounts.payable,payroll(s,f))+definition(f).daily*7;
 export const definition=(f:Facility)=>INDUSTRIES[f.industry].variants.find(v=>v.id===f.variant)||INDUSTRIES[f.industry].variants[0];

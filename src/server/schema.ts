@@ -1,8 +1,9 @@
+import {workforceCommands} from '../modules/workforce/schema';
 import {enterpriseCommands} from '../modules/enterprise/schema';
 import {managementCommands,employeeId} from '../modules/management/schema';
 import { z } from 'zod';
 const empty = <T extends string>(type: T) => z.object({ type: z.literal(type) }).strict();
-export const commandSchema = z.discriminatedUnion('type', [...managementCommands,...enterpriseCommands,
+export const commandSchema = z.discriminatedUnion('type', [...workforceCommands,...managementCommands,...enterpriseCommands,
   z.object({ type: z.literal('buy_land'), tileId: z.number().int().min(0).max(399) }).strict(),
   empty('pay_due'), empty('build'), z.object({type:z.literal('equip'),used:z.boolean().optional()}).strict(), empty('report'), empty('pause'), empty('heartbeat'),
   z.object({ type: z.literal('buy_stock'), productId: z.enum(['food','drinks','cleaning','general']), quantity: z.number().int().min(1).max(10000) }).strict(),

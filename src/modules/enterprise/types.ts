@@ -1,6 +1,6 @@
 import type { Account, Entry, Stock } from '../simulation/types';
 export type Industry='retail'|'restaurant'|'logistics'|'factory'|'hotel'|'fuel';
-export type WorkerRole='cook'|'waiter'|'driver'|'operator'|'receptionist'|'housekeeper'|'attendant';
+export type WorkerRole='specialist'|'cook'|'waiter'|'driver'|'operator'|'receptionist'|'housekeeper'|'attendant';
 export type Accounts=Record<Account,number>;
 export interface EnterpriseCompany {id:string;name:string;industry:Industry;accounts:Accounts;created:number;capital:number}
 export interface BusinessDay {day:number;revenue:number;cogs:number;expenses:number;units:number;lost:number;produced:number;waste:number;deliveries:number;occupied:number;capacity:number;internalRevenue:number;internalExpense:number}
@@ -14,6 +14,9 @@ export interface EconomicEvent {id:string;kind:'raw_cost'|'tourism'|'fuel_shorta
 export interface BusinessRecord extends Entry {companyId:string;facilityId:string;counterparty?:string;internal:boolean}
 export interface EnterpriseState {companies:EnterpriseCompany[];facilities:Facility[];suppliers:Supplier[];production:Production[];vehicles:Vehicle[];shipments:Shipment[];contracts:BusinessContract[];events:EconomicEvent[];journal:BusinessRecord[];supplierUsage:Record<string,number>;marketUsage:Record<string,number>;negotiated:Record<string,number>;bookings:{id:string;facilityId:string;rooms:number;rate:number;arrival:number;departure:number;status:'reserved'|'checked_in'|'completed'}[];lastDay:number;internalTransport:number;objectives:boolean[]}
 export type IndustryAction=
+ | {type:'ex_training';facilityId:string;employeeId:string;courseId:string}
+ | {type:'ex_reserve';facilityId:string;employeeId:string;reserve:number}
+ | {type:'ex_driver';vehicleId:string;employeeId:string}
  | {type:'ex_purchase';facilityId:string;supplierId:string;productId:string;quantity:number}
  | {type:'ex_price';facilityId:string;productId:string;price:number}
  | {type:'ex_produce';facilityId:string;recipeId:string;quantity:number}
